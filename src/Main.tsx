@@ -9,11 +9,21 @@ export const Main = () => {
     const theme = createTheme()
     const useStyles = makeStyles({
         tabContent: {
-            padding: theme.spacing(4),
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: theme.spacing(4),
+            gap: theme.spacing(3),
+            width: "100%",
+            maxWidth: theme.spacing(100)
+        },
+        box: {
+            alignItems: 'center',
+            padding: theme.spacing(2)
+        },
+        tabPanel: {
+            display: "flex",
+            flexDirection: "column",
+            alignItems: 'center'
         }
     })
     const classes = useStyles()
@@ -25,24 +35,24 @@ export const Main = () => {
     }
 
     return (
-        <Box>
+        <Box className={classes.box}>
             <TabContext value={selectedTokenIndex.toString()}>
-                <TabList onChange={handleChange} aria-label="stake form tabs">
+                <TabList onChange={handleChange} aria-label="stake form tabs" centered>
                     <Tab label="配置" value="0" />
                     <Tab label="数据" value="1" />
                     <Tab label="操作" value="2" />
                 </TabList>
-                <TabPanel value="0">
+                <TabPanel value="0" className={classes.tabPanel}>
                     <SolConfig
                         className={classes.tabContent}
                     />
                 </TabPanel>
-                <TabPanel value="1">
+                <TabPanel value="1" className={classes.tabPanel}>
                     <SolData
                         className={classes.tabContent}
                     />
                 </TabPanel>
-                <TabPanel value="2">
+                <TabPanel value="2" className={classes.tabPanel}>
                     <SolAction
                         className={classes.tabContent}
                     />

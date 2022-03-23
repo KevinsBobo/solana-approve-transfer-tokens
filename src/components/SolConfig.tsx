@@ -1,5 +1,5 @@
-import { Button, TextField } from "@mui/material"
-import { useEffect, useState } from "react"
+import { Alert, Button, Snackbar, TextField } from "@mui/material"
+import React, { useEffect, useState } from "react"
 
 export interface SolConfigProps {
     [x: string]: any
@@ -64,28 +64,45 @@ export const SolConfig = ({
 
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         const inputString = event.target.value.trim()
-        const error = inputDataMap[event.target.id].valueErrorProps[0]
-        const setErrorFunction = inputDataMap[event.target.id].valueErrorProps[1]
-        if (inputDataMap[event.target.id].required && inputString.length <= 0 && !error) {
+        const error = inputDataMap[event.target.name].valueErrorProps[0]
+        const setErrorFunction = inputDataMap[event.target.name].valueErrorProps[1]
+        if (inputDataMap[event.target.name].required && inputString.length <= 0 && !error) {
             setErrorFunction(true)
         } else if (error) {
             setErrorFunction(false)
         }
-        const setValueFunction = inputDataMap[event.target.id].valueProps[1]
+        const setValueFunction = inputDataMap[event.target.name].valueProps[1]
         setValueFunction(inputString)
     }
 
     const [isSaved, setSaved] = useState<boolean>(false)
+    const [showEmptyInput, setShowEmptyInput] = useState<boolean>(false)
 
     useEffect(() => {
-        setSaved(keysData.size > 0)
+        saveInput()
     })
 
     const handleSave = () => {
         for (let key in inputDataMap) {
             keysData.set(key, inputDataMap[key])
         }
-        setSaved(true)
+        saveInput(true)
+    }
+
+    const saveInput = (isClick: boolean = false) => {
+        let isCorretInput = keysData.size > 0 ? true : false
+        keysData.forEach((element) => {
+            const inputString = element.valueProps[0].trim()
+            if (element.required && inputString.length <= 0) {
+                !element.valueErrorProps[0] && element.valueErrorProps[1](true)
+                isCorretInput = false
+                isClick && !showEmptyInput && setShowEmptyInput(true)
+            }
+        })
+        if (isCorretInput) {
+            showEmptyInput && setShowEmptyInput(false)
+            setSaved(true)
+        }
     }
 
     const handleEdit = () => {
@@ -96,19 +113,28 @@ export const SolConfig = ({
         setSaved(false)
     }
 
+    const handleCloseEmptyInput = (event: React.SyntheticEvent | Event) => {
+        showEmptyInput && setShowEmptyInput(false)
+    }
+
 
     return (
         <div {...rest}>
             {Object.keys(inputDataMap).map(key => {
                 return (
                     <TextField
-                        id={key}
+                        // id={key}
                         key={key}
+                        name={key}
                         label={inputDataMap[key].label}
                         color="secondary"
                         error={inputDataMap[key].valueErrorProps[0]}
                         fullWidth={true}
-                        value={isSaved ? keysData.get(key)?.valueProps[0] : inputDataMap[key].valueProps[0]}
+                        value={
+                            isSaved && keysData.get(key)?.valueProps[0] ?
+                                keysData.get(key)?.valueProps[0] :
+                                inputDataMap[key].valueProps[0]
+                        }
                         onChange={handleInputChange}
                         required
                         disabled={isSaved}
@@ -132,6 +158,16 @@ export const SolConfig = ({
                     保存
                 </Button>
             }
+            <Snackbar
+                open={showEmptyInput}
+                autoHideDuration={2000}
+                onClose={handleCloseEmptyInput}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseEmptyInput} severity="error">
+                    "请输入必填项"
+                </Alert>
+            </Snackbar>
         </div>
     )
 }
