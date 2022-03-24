@@ -8,6 +8,7 @@
         "@mui/lab": "^5.0.0-alpha.74",
         "@mui/material": "^5.5.2",
         "@mui/styles": "^5.5.1",
+        "@mui/x-data-grid": "^5.6.1",
         "@solana/spl-token": "^0.2.0",
         "@solana/web3.js": "^1.36.0",
         "@testing-library/jest-dom": "^5.16.2",

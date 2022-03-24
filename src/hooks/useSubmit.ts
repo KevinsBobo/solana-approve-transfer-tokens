@@ -39,14 +39,14 @@ async function checkMint(mint: PublicKey) {
     console.log(mintInfo)
 }
 
-async function checkAccount() {
+export async function checkAccount() {
     const fromWallet = getAccountFromSecretKey('5CJn8hnPKQ7KRo8D9YF4J98tt4C4bn7kgMXL6Bpc4H1srNqwmCTBNUcSfqWkBZReincY252rVDdfQReg7Jx7cztC')
     const mintAuthority = getAccountFromSecretKey('JpAs3PCAC98Bx4ChfAbPzzd5deV96ozLu44wkCuAQhJwBdFtJcT3QA7ABoHKrJksdQgnBULpCb6QkVkhEDErCiQ')
     const freezeAuthority = getAccountFromSecretKey('4f3kdJ6Ga5QXQSTrZxJ84T1YTafwh8caD8RweDb7KutKWc1kWsRGtphbaaqYWMFwgt2dFbUcdr959hSMKh34LFpN')
     const toWallet = getAccountFromSecretKey('16sBQLdzGCXsv6uNXrH2tt7NbXnWuYAWr4ZUuWuvGrn7vRRFy39jdXgJCZrnL2L9gFv2wpS4L5WEeXNr4W7bpdm')
     const testWallet = getAccountFromSecretKey('4wz9UVEFV8HFtXGHp8fPEMhPwzYVh384Jm1qpmim2r9pZfF7qSwhGRr8ShZK7UMNNX8eSPdn4sRbzSH88n5hi7XN')
 
-    const account = toWallet.publicKey
+    const account = testWallet.publicKey
     // Connect to cluster
     const connection = new Connection(clusterApiUrl('devnet'), 'confirmed')
     const testkenAccounts = await connection.getTokenAccountsByOwner(

@@ -1,154 +1,113 @@
-import { Alert, Button, MenuItem, Snackbar, TextField } from "@mui/material"
-import React, { useEffect, useState } from "react"
+import { Alert, Button, Snackbar, TextField } from "@mui/material"
+import React, { useState } from "react"
 import { getPublicKeyFromPublicKeyString, getPublicKeyFromSecretKeyString } from "../hooks"
+import {
+    KeyInputProps,
+    gasSecretKey,
+    gasPublicKey,
+    paySecretKey,
+    payPublicKey,
+    recevieAddress,
+} from "../Main"
 
 export interface SolConfigProps {
+    configSaved: boolean,
+    setConfigSaved: React.Dispatch<React.SetStateAction<boolean>>,
+    keysData: { [key: string]: KeyInputProps },
     [x: string]: any
 }
 
-interface InputProps {
-    label: string,
-    valueProps: [string, React.Dispatch<string>],
-    valueErrorProps: [boolean, React.Dispatch<boolean>],
-    required: boolean
-}
-
-const NET_MAIN = 'mainnet'
-const NET_DEV = 'devnet'
-const NET_TEST = 'testnet'
-export const network = new Map<string, string>(Array(['selected', NET_MAIN]))
-export const keysData = new Map<string, InputProps>()
 
 export const SolConfig = ({
+    configSaved,
+    setConfigSaved,
+    keysData,
     ...rest
 }: SolConfigProps) => {
 
-    const inputDataMap: { [key: string]: InputProps } = {
-        gasSecretKey: {
-            label: "操作钱包 私钥",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: true,
-        },
-        gasPublicKey:
-        {
-            label: "操作钱包 公钥",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: true,
-        },
-        paySecretKey:
-        {
-            label: "资产钱包 私钥",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: true,
-        },
-        payPublicKey:
-        {
-            label: "资产钱包 公钥",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: true,
-        },
-        // mintAddress:
-        // {
-        //     label: "Token地址",
-        //     valueProps: useState<string>(""),
-        //     valueErrorProps: useState<boolean>(false),
-        //     required: true,
-        // },
-        recevieAddress:
-        {
-            label: "接收资产钱包 公钥 （选填）",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: false,
-        },
-    }
-
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
         const inputString = event.target.value.trim()
-        const error = inputDataMap[event.target.name].valueErrorProps[0]
-        const setErrorFunction = inputDataMap[event.target.name].valueErrorProps[1]
-        if (inputDataMap[event.target.name].required && inputString.length <= 0 && !error) {
+        const error = keysData[event.target.name].valueErrorProps[0]
+        const setErrorFunction = keysData[event.target.name].valueErrorProps[1]
+        if (keysData[event.target.name].required && inputString.length <= 0 && !error) {
             setErrorFunction(true)
         } else if (error) {
             setErrorFunction(false)
         }
-        const setValueFunction = inputDataMap[event.target.name].valueProps[1]
+        const setValueFunction = keysData[event.target.name].valueProps[1]
         setValueFunction(inputString)
     }
 
-    const [isSaved, setSaved] = useState<boolean>(false)
     const [showEmptyInput, setShowEmptyInput] = useState<boolean>(false)
     const [showGasKeyMismatch, setShowGasKeyMismatch] = useState<boolean>(false)
     const [showPayKeyMismatch, setShowPayKeyMismatch] = useState<boolean>(false)
     const [showRecevieKeyError, setShowRecevieKeyError] = useState<boolean>(false)
 
-    useEffect(() => {
-        saveInput()
-    })
 
-    const handleSave = () => {
-        for (let key in inputDataMap) {
-            keysData.set(key, inputDataMap[key])
-        }
-        saveInput(true)
-    }
-
-    const saveInput = (isClick: boolean = false) => {
-        let isCorretInput = keysData.size > 0 ? true : false
-        keysData.forEach((element) => {
-            const inputString = element.valueProps[0]
-            if (element.required && inputString.length <= 0) {
-                !element.valueErrorProps[0] && element.valueErrorProps[1](true)
+    const saveInput = () => {
+        let isCorretInput = true
+        for (let key in keysData) {
+            const inputString = keysData[key].valueProps[0]
+            if (keysData[key].required && inputString.length <= 0) {
+                !keysData[key].valueErrorProps[0] && keysData[key].valueErrorProps[1](true)
                 isCorretInput = false
-                isClick && !showEmptyInput && setShowEmptyInput(true)
+                !showEmptyInput && setShowEmptyInput(true)
             }
-        })
+        }
         if (isCorretInput) {
             showEmptyInput && setShowEmptyInput(false)
             if (
-                (getPublicKeyFromSecretKeyString(keysData.get('gasSecretKey')?.valueProps[0]) !==
-                    keysData.get('gasPublicKey')?.valueProps[0])
+                (getPublicKeyFromSecretKeyString(keysData[gasSecretKey].valueProps[0]) !==
+                    keysData[gasPublicKey].valueProps[0])
             ) {
-                isClick && !keysData.get('gasPublicKey')?.valueErrorProps[0] && keysData.get('gasPublicKey')?.valueErrorProps[1](true)
-                isClick && !keysData.get('gasSecretKey')?.valueErrorProps[0] && keysData.get('gasSecretKey')?.valueErrorProps[1](true)
-                isClick && !showGasKeyMismatch && setShowGasKeyMismatch(true)
-            } else if (
-                (getPublicKeyFromSecretKeyString(keysData.get('paySecretKey')?.valueProps[0]) !==
-                    keysData.get('payPublicKey')?.valueProps[0])
-            ) {
-                isClick && !keysData.get('payPublicKey')?.valueErrorProps[0] && keysData.get('payPublicKey')?.valueErrorProps[1](true)
-                isClick && !keysData.get('paySecretKey')?.valueErrorProps[0] && keysData.get('paySecretKey')?.valueErrorProps[1](true)
-                isClick && !showPayKeyMismatch && setShowPayKeyMismatch(true)
-            } else if (
-                (getPublicKeyFromPublicKeyString(keysData.get('recevieAddress')?.valueProps[0]) !==
-                    keysData.get('recevieAddress')?.valueProps[0])
-            ) {
-                isClick && !keysData.get('recevieAddress')?.valueErrorProps[0] && keysData.get('recevieAddress')?.valueErrorProps[1](true)
-                isClick && !showRecevieKeyError && setShowRecevieKeyError(true)
+                !keysData[gasPublicKey].valueErrorProps[0] && keysData[gasPublicKey].valueErrorProps[1](true)
+                !keysData[gasSecretKey].valueErrorProps[0] && keysData[gasSecretKey].valueErrorProps[1](true)
+                !showGasKeyMismatch && setShowGasKeyMismatch(true)
+                isCorretInput = false
             } else {
-                !keysData.get('gasPublicKey')?.valueErrorProps[0] && keysData.get('gasPublicKey')?.valueErrorProps[1](false)
-                keysData.get('gasSecretKey')?.valueErrorProps[0] && keysData.get('gasSecretKey')?.valueErrorProps[1](false)
-                keysData.get('payPublicKey')?.valueErrorProps[0] && keysData.get('payPublicKey')?.valueErrorProps[1](false)
-                keysData.get('paySecretKey')?.valueErrorProps[0] && keysData.get('paySecretKey')?.valueErrorProps[1](false)
-                keysData.get('recevieAddress')?.valueErrorProps[0] && keysData.get('recevieAddress')?.valueErrorProps[1](false)
+                keysData[gasPublicKey].valueErrorProps[0] && keysData[gasPublicKey].valueErrorProps[1](false)
+                keysData[gasSecretKey].valueErrorProps[0] && keysData[gasSecretKey].valueErrorProps[1](false)
+                showGasKeyMismatch && setShowGasKeyMismatch(false)
+            }
+            if (
+                (getPublicKeyFromSecretKeyString(keysData[paySecretKey].valueProps[0]) !==
+                    keysData[payPublicKey].valueProps[0])
+            ) {
+                !keysData[payPublicKey].valueErrorProps[0] && keysData[payPublicKey].valueErrorProps[1](true)
+                !keysData[paySecretKey].valueErrorProps[0] && keysData[paySecretKey].valueErrorProps[1](true)
+                !showPayKeyMismatch && setShowPayKeyMismatch(true)
+                isCorretInput = false
+            } else {
+                keysData[payPublicKey].valueErrorProps[0] && keysData[payPublicKey].valueErrorProps[1](false)
+                keysData[paySecretKey].valueErrorProps[0] && keysData[paySecretKey].valueErrorProps[1](false)
+                showPayKeyMismatch && setShowPayKeyMismatch(false)
+            }
+            if (
+                (getPublicKeyFromPublicKeyString(keysData[recevieAddress].valueProps[0]) !==
+                    keysData[recevieAddress].valueProps[0])
+            ) {
+                !keysData[recevieAddress].valueErrorProps[0] && keysData[recevieAddress].valueErrorProps[1](true)
+                !showRecevieKeyError && setShowRecevieKeyError(true)
+                isCorretInput = false
+            } else {
+                keysData[recevieAddress].valueErrorProps[0] && keysData[recevieAddress].valueErrorProps[1](false)
+                showRecevieKeyError && setShowRecevieKeyError(false)
+            }
+
+            if (isCorretInput) {
+                for (let key in keysData) {
+                    keysData[key].valueErrorProps[0] && keysData[key].valueErrorProps[1](false)
+                }
                 showGasKeyMismatch && setShowGasKeyMismatch(false)
                 showPayKeyMismatch && setShowPayKeyMismatch(false)
                 showRecevieKeyError && setShowRecevieKeyError(false)
-                setSaved(true)
+                setConfigSaved(true)
             }
         }
     }
 
     const handleEdit = () => {
-        keysData.forEach((element, key) => {
-            inputDataMap[key].valueProps[1](element.valueProps[0])
-        })
-        keysData.clear()
-        setSaved(false)
+        setConfigSaved(false)
     }
 
     const handleCloseEmptyInput = (event: React.SyntheticEvent | Event) => {
@@ -167,67 +126,27 @@ export const SolConfig = ({
         showRecevieKeyError && setShowRecevieKeyError(false)
     }
 
-    const currentNetwork = [
-        {
-            value: NET_MAIN,
-            label: '主网',
-        },
-        {
-            value: NET_DEV,
-            label: '开发网',
-        },
-        {
-            value: NET_TEST,
-            label: '测试网',
-        },
-    ];
-
-    const [selectedNetwork, setNetwork] = useState('mainnet');
-
-    const handleNetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        network.set('selected', event.target.value)
-        setNetwork(event.target.value)
-        console.log(network.get('selected'))
-    };
-
     return (
         <div {...rest}>
-            <TextField
-                id="outlined-select-currency"
-                select
-                label="网络"
-                value={selectedNetwork}
-                onChange={handleNetChange}
-                helperText="（支持主网/开发网/测试网）"
-            >
-                {currentNetwork.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                    </MenuItem>
-                ))}
-            </TextField>
-            {Object.keys(inputDataMap).map(key => {
+            {Object.keys(keysData).map(key => {
                 return (
                     <TextField
                         // id={key}
                         key={key}
                         name={key}
-                        label={inputDataMap[key].label}
+                        label={keysData[key].label}
                         color="secondary"
-                        error={inputDataMap[key].valueErrorProps[0]}
+                        error={keysData[key].valueErrorProps[0]}
                         fullWidth={true}
-                        value={
-                            isSaved && keysData.get(key)?.valueProps[0] ?
-                                keysData.get(key)?.valueProps[0] :
-                                inputDataMap[key].valueProps[0]
-                        }
+                        value={keysData[key].valueProps[0]}
                         onChange={handleInputChange}
-                        required
-                        disabled={isSaved}
+                        required={keysData[key].required}
+                        disabled={configSaved}
+                        type={keysData[key].type}
                     />
                 )
             })}
-            {isSaved ?
+            {configSaved ?
                 <Button
                     color="primary"
                     variant="contained"
@@ -239,7 +158,7 @@ export const SolConfig = ({
                 <Button
                     color="primary"
                     variant="contained"
-                    onClick={() => handleSave()}
+                    onClick={() => saveInput()}
                 >
                     保存
                 </Button>
@@ -251,7 +170,7 @@ export const SolConfig = ({
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={handleCloseEmptyInput} severity="error">
-                    "请输入必填项"
+                    请输入必填项
                 </Alert>
             </Snackbar>
             <Snackbar
@@ -261,7 +180,7 @@ export const SolConfig = ({
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={handleCloseGasKeyMismatch} severity="error">
-                    "操作钱包密钥对不匹配"
+                    操作钱包密钥对不匹配
                 </Alert>
             </Snackbar>
             <Snackbar
@@ -271,7 +190,7 @@ export const SolConfig = ({
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={handleClosePayKeyMismatch} severity="error">
-                    "资产钱包密钥对不匹配"
+                    资产钱包密钥对不匹配
                 </Alert>
             </Snackbar>
             <Snackbar
@@ -281,7 +200,7 @@ export const SolConfig = ({
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
                 <Alert onClose={handleCloseRecevieKeyError} severity="error">
-                    "接收资产地址错误"
+                    接收资产地址错误
                 </Alert>
             </Snackbar>
         </div>

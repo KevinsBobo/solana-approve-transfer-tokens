@@ -1,5 +1,7 @@
 export { useSubmit } from "./useSubmit"
 export {
     getPublicKeyFromSecretKeyString,
-    getPublicKeyFromPublicKeyString
+    getPublicKeyFromPublicKeyString,
+    getSolanaBalance,
+    getAccountBalance,
 } from "./solanaFunctions"
