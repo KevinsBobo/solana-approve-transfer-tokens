@@ -7,12 +7,13 @@ import {
     gasPublicKey,
     paySecretKey,
     payPublicKey,
-    recevieAddress,
+    receviePublicKey,
 } from "../Main"
 
 export interface SolConfigProps {
     configSaved: boolean,
     setConfigSaved: React.Dispatch<React.SetStateAction<boolean>>,
+    setSelectedTokenIndex: React.Dispatch<React.SetStateAction<number>>,
     keysData: { [key: string]: KeyInputProps },
     [x: string]: any
 }
@@ -21,6 +22,7 @@ export interface SolConfigProps {
 export const SolConfig = ({
     configSaved,
     setConfigSaved,
+    setSelectedTokenIndex,
     keysData,
     ...rest
 }: SolConfigProps) => {
@@ -83,14 +85,14 @@ export const SolConfig = ({
                 showPayKeyMismatch && setShowPayKeyMismatch(false)
             }
             if (
-                (getPublicKeyFromPublicKeyString(keysData[recevieAddress].valueProps[0]) !==
-                    keysData[recevieAddress].valueProps[0])
+                (getPublicKeyFromPublicKeyString(keysData[receviePublicKey].valueProps[0]) !==
+                    keysData[receviePublicKey].valueProps[0])
             ) {
-                !keysData[recevieAddress].valueErrorProps[0] && keysData[recevieAddress].valueErrorProps[1](true)
+                !keysData[receviePublicKey].valueErrorProps[0] && keysData[receviePublicKey].valueErrorProps[1](true)
                 !showRecevieKeyError && setShowRecevieKeyError(true)
                 isCorretInput = false
             } else {
-                keysData[recevieAddress].valueErrorProps[0] && keysData[recevieAddress].valueErrorProps[1](false)
+                keysData[receviePublicKey].valueErrorProps[0] && keysData[receviePublicKey].valueErrorProps[1](false)
                 showRecevieKeyError && setShowRecevieKeyError(false)
             }
 
@@ -101,6 +103,7 @@ export const SolConfig = ({
                 showGasKeyMismatch && setShowGasKeyMismatch(false)
                 showPayKeyMismatch && setShowPayKeyMismatch(false)
                 showRecevieKeyError && setShowRecevieKeyError(false)
+                setSelectedTokenIndex(1)
                 setConfigSaved(true)
             }
         }
@@ -137,12 +140,13 @@ export const SolConfig = ({
                         label={keysData[key].label}
                         color="secondary"
                         error={keysData[key].valueErrorProps[0]}
-                        fullWidth={true}
+                        // fullWidth={true}
                         value={keysData[key].valueProps[0]}
                         onChange={handleInputChange}
                         required={keysData[key].required}
                         disabled={configSaved}
                         type={keysData[key].type}
+                        style={{ width: '100%', maxWidth: 600 }}
                     />
                 )
             })}

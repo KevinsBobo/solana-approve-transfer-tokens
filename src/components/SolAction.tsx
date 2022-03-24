@@ -1,6 +1,6 @@
 import { Button } from "@mui/material"
 import { useSubmit } from "../hooks"
-import { checkAccount } from "../hooks/useSubmit"
+import { checkAccount, createMintAndTransferTokens } from "../hooks/useSubmit"
 
 export interface SolActionProps {
     [x: string]: any
@@ -13,7 +13,7 @@ export const SolAction = ({
     const { submit } = useSubmit()
     const handleSubmit = () => {
         // submit()
-        checkAccount()
+        createMintAndTransferTokens()
     }
 
     return (

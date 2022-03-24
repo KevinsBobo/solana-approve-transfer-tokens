@@ -4,4 +4,6 @@ export {
     getPublicKeyFromPublicKeyString,
     getSolanaBalance,
     getAccountBalance,
+    getAirdorp,
+    createMintAndTransferTokens,
 } from "./solanaFunctions"

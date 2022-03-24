@@ -183,7 +183,7 @@ async function approveAndTransferTokens() {
     })
 }
 
-async function createMintAndTransferTokens() {
+export async function createMintAndTransferTokens() {
     // Connect to cluster
     const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
 
