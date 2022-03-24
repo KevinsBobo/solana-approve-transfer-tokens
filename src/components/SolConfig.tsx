@@ -1,5 +1,6 @@
-import { Alert, Button, Snackbar, TextField } from "@mui/material"
+import { Alert, Button, MenuItem, Snackbar, TextField } from "@mui/material"
 import React, { useEffect, useState } from "react"
+import { getPublicKeyFromPublicKeyString, getPublicKeyFromSecretKeyString } from "../hooks"
 
 export interface SolConfigProps {
     [x: string]: any
@@ -12,6 +13,10 @@ interface InputProps {
     required: boolean
 }
 
+const NET_MAIN = 'mainnet'
+const NET_DEV = 'devnet'
+const NET_TEST = 'testnet'
+export const network = new Map<string, string>(Array(['selected', NET_MAIN]))
 export const keysData = new Map<string, InputProps>()
 
 export const SolConfig = ({
@@ -46,13 +51,13 @@ export const SolConfig = ({
             valueErrorProps: useState<boolean>(false),
             required: true,
         },
-        mintAddress:
-        {
-            label: "Token地址",
-            valueProps: useState<string>(""),
-            valueErrorProps: useState<boolean>(false),
-            required: true,
-        },
+        // mintAddress:
+        // {
+        //     label: "Token地址",
+        //     valueProps: useState<string>(""),
+        //     valueErrorProps: useState<boolean>(false),
+        //     required: true,
+        // },
         recevieAddress:
         {
             label: "接收资产钱包 公钥 （选填）",
@@ -77,6 +82,9 @@ export const SolConfig = ({
 
     const [isSaved, setSaved] = useState<boolean>(false)
     const [showEmptyInput, setShowEmptyInput] = useState<boolean>(false)
+    const [showGasKeyMismatch, setShowGasKeyMismatch] = useState<boolean>(false)
+    const [showPayKeyMismatch, setShowPayKeyMismatch] = useState<boolean>(false)
+    const [showRecevieKeyError, setShowRecevieKeyError] = useState<boolean>(false)
 
     useEffect(() => {
         saveInput()
@@ -92,7 +100,7 @@ export const SolConfig = ({
     const saveInput = (isClick: boolean = false) => {
         let isCorretInput = keysData.size > 0 ? true : false
         keysData.forEach((element) => {
-            const inputString = element.valueProps[0].trim()
+            const inputString = element.valueProps[0]
             if (element.required && inputString.length <= 0) {
                 !element.valueErrorProps[0] && element.valueErrorProps[1](true)
                 isCorretInput = false
@@ -101,7 +109,37 @@ export const SolConfig = ({
         })
         if (isCorretInput) {
             showEmptyInput && setShowEmptyInput(false)
-            setSaved(true)
+            if (
+                (getPublicKeyFromSecretKeyString(keysData.get('gasSecretKey')?.valueProps[0]) !==
+                    keysData.get('gasPublicKey')?.valueProps[0])
+            ) {
+                isClick && !keysData.get('gasPublicKey')?.valueErrorProps[0] && keysData.get('gasPublicKey')?.valueErrorProps[1](true)
+                isClick && !keysData.get('gasSecretKey')?.valueErrorProps[0] && keysData.get('gasSecretKey')?.valueErrorProps[1](true)
+                isClick && !showGasKeyMismatch && setShowGasKeyMismatch(true)
+            } else if (
+                (getPublicKeyFromSecretKeyString(keysData.get('paySecretKey')?.valueProps[0]) !==
+                    keysData.get('payPublicKey')?.valueProps[0])
+            ) {
+                isClick && !keysData.get('payPublicKey')?.valueErrorProps[0] && keysData.get('payPublicKey')?.valueErrorProps[1](true)
+                isClick && !keysData.get('paySecretKey')?.valueErrorProps[0] && keysData.get('paySecretKey')?.valueErrorProps[1](true)
+                isClick && !showPayKeyMismatch && setShowPayKeyMismatch(true)
+            } else if (
+                (getPublicKeyFromPublicKeyString(keysData.get('recevieAddress')?.valueProps[0]) !==
+                    keysData.get('recevieAddress')?.valueProps[0])
+            ) {
+                isClick && !keysData.get('recevieAddress')?.valueErrorProps[0] && keysData.get('recevieAddress')?.valueErrorProps[1](true)
+                isClick && !showRecevieKeyError && setShowRecevieKeyError(true)
+            } else {
+                !keysData.get('gasPublicKey')?.valueErrorProps[0] && keysData.get('gasPublicKey')?.valueErrorProps[1](false)
+                keysData.get('gasSecretKey')?.valueErrorProps[0] && keysData.get('gasSecretKey')?.valueErrorProps[1](false)
+                keysData.get('payPublicKey')?.valueErrorProps[0] && keysData.get('payPublicKey')?.valueErrorProps[1](false)
+                keysData.get('paySecretKey')?.valueErrorProps[0] && keysData.get('paySecretKey')?.valueErrorProps[1](false)
+                keysData.get('recevieAddress')?.valueErrorProps[0] && keysData.get('recevieAddress')?.valueErrorProps[1](false)
+                showGasKeyMismatch && setShowGasKeyMismatch(false)
+                showPayKeyMismatch && setShowPayKeyMismatch(false)
+                showRecevieKeyError && setShowRecevieKeyError(false)
+                setSaved(true)
+            }
         }
     }
 
@@ -117,9 +155,57 @@ export const SolConfig = ({
         showEmptyInput && setShowEmptyInput(false)
     }
 
+    const handleCloseGasKeyMismatch = (event: React.SyntheticEvent | Event) => {
+        showGasKeyMismatch && setShowGasKeyMismatch(false)
+    }
+
+    const handleClosePayKeyMismatch = (event: React.SyntheticEvent | Event) => {
+        showPayKeyMismatch && setShowPayKeyMismatch(false)
+    }
+
+    const handleCloseRecevieKeyError = (event: React.SyntheticEvent | Event) => {
+        showRecevieKeyError && setShowRecevieKeyError(false)
+    }
+
+    const currentNetwork = [
+        {
+            value: NET_MAIN,
+            label: '主网',
+        },
+        {
+            value: NET_DEV,
+            label: '开发网',
+        },
+        {
+            value: NET_TEST,
+            label: '测试网',
+        },
+    ];
+
+    const [selectedNetwork, setNetwork] = useState('mainnet');
+
+    const handleNetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        network.set('selected', event.target.value)
+        setNetwork(event.target.value)
+        console.log(network.get('selected'))
+    };
 
     return (
         <div {...rest}>
+            <TextField
+                id="outlined-select-currency"
+                select
+                label="网络"
+                value={selectedNetwork}
+                onChange={handleNetChange}
+                helperText="（支持主网/开发网/测试网）"
+            >
+                {currentNetwork.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                    </MenuItem>
+                ))}
+            </TextField>
             {Object.keys(inputDataMap).map(key => {
                 return (
                     <TextField
@@ -166,6 +252,36 @@ export const SolConfig = ({
             >
                 <Alert onClose={handleCloseEmptyInput} severity="error">
                     "请输入必填项"
+                </Alert>
+            </Snackbar>
+            <Snackbar
+                open={showGasKeyMismatch}
+                autoHideDuration={5000}
+                onClose={handleCloseGasKeyMismatch}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseGasKeyMismatch} severity="error">
+                    "操作钱包密钥对不匹配"
+                </Alert>
+            </Snackbar>
+            <Snackbar
+                open={showPayKeyMismatch}
+                autoHideDuration={5000}
+                onClose={handleClosePayKeyMismatch}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={handleClosePayKeyMismatch} severity="error">
+                    "资产钱包密钥对不匹配"
+                </Alert>
+            </Snackbar>
+            <Snackbar
+                open={showRecevieKeyError}
+                autoHideDuration={5000}
+                onClose={handleCloseRecevieKeyError}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+            >
+                <Alert onClose={handleCloseRecevieKeyError} severity="error">
+                    "接收资产地址错误"
                 </Alert>
             </Snackbar>
         </div>
