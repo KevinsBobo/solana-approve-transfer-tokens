@@ -1,4 +1,4 @@
-import { AccountLayout, createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { AccountLayout, createMint, getAccount, getAssociatedTokenAddress, getMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
 
@@ -117,3 +117,25 @@ export async function createMintAndTransferTokens(connection: Connection, secret
     // console.log('mint tx:', signature)
 }
 
+export async function getMintDecimals(connection: Connection, mintAddress: string) {
+    try {
+        const mintInfo = await getMint(connection, new PublicKey(mintAddress))
+        return mintInfo.decimals
+    } catch (error) {
+        console.log(error)
+        return -1
+    }
+}
+
+export async function getMintAccountInfo(connection: Connection, mintAddress: string, publicKeyString: string) {
+    try {
+        const toTokenAccount = await getAssociatedTokenAddress(
+            new PublicKey(mintAddress),
+            new PublicKey(publicKeyString)
+        )
+        const approvedAccountInfo = await getAccount(connection, toTokenAccount, undefined, TOKEN_PROGRAM_ID)
+        return approvedAccountInfo
+    } catch (error) {
+        return undefined
+    }
+}

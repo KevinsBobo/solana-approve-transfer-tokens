@@ -6,4 +6,6 @@ export {
     getAccountBalance,
     getAirdorp,
     createMintAndTransferTokens,
+    getMintDecimals,
+    getMintAccountInfo,
 } from "./solanaFunctions"

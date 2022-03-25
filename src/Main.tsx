@@ -192,6 +192,16 @@ export const Main = () => {
                 </TabPanel>
                 <TabPanel value="2">
                     <SolAction
+                        selectedNetwork={selectedNetwork}
+                        gasSecretKeyString={keysData[gasSecretKey].valueProps[0]}
+                        gasPublicKeyString={keysData[gasPublicKey].valueProps[0]}
+                        paySecretKeyString={keysData[paySecretKey].valueProps[0]}
+                        payPublicKeyString={keysData[payPublicKey].valueProps[0]}
+                        receviePublicKeyString={
+                            keysData[receviePublicKey].valueProps[0].length > 0 ?
+                                keysData[receviePublicKey].valueProps[0] :
+                                keysData[gasPublicKey].valueProps[0]
+                        }
                         className={classes.tabContent}
                     />
                 </TabPanel>
