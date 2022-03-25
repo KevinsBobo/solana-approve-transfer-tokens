@@ -4,7 +4,9 @@ import React, { useEffect } from "react"
 import { useState } from "react"
 import {
     getMintDecimals,
-    getMintAccountInfo
+    getMintAccountInfo,
+    approveTokens,
+    transferTokens
 } from "../hooks"
 
 export interface SolActionProps {
@@ -14,6 +16,8 @@ export interface SolActionProps {
     paySecretKeyString: string,
     payPublicKeyString: string,
     receviePublicKeyString: string,
+    isConfirmed: boolean,
+    setConfirmed: React.Dispatch<React.SetStateAction<boolean>>,
     [x: string]: any
 }
 
@@ -24,6 +28,8 @@ export const SolAction = ({
     paySecretKeyString,
     payPublicKeyString,
     receviePublicKeyString,
+    isConfirmed,
+    setConfirmed,
     ...rest
 }: SolActionProps) => {
     const connection = new Connection(clusterApiUrl(selectedNetwork), 'confirmed')
@@ -32,44 +38,29 @@ export const SolAction = ({
         setSubmited(false)
     }
 
-    async function handleExecution() {
-        setSubmited(true)
-        setInExecution(true)
-        // const declimals = await getMintDecimals(connection, mintAddress)
-        setInExecution(false)
-        setSubmited(false)
+    async function getGasMintAccountInfo() {
+        const gasMintAccountInfo = await getMintAccountInfo(connection, mintAddress, gasPublicKeyString)
+        const gasAmount = Number(
+            gasMintAccountInfo?.amount ?
+                gasMintAccountInfo.amount / BigInt(10 ** mintDecimals) :
+                0
+        )
+        setGasMintAmount(gasAmount)
+        return gasAmount
     }
 
-    const handleAutoExecution = () => {
-        setSubmited(true)
+    async function getRecevieMintAccountInfo() {
+        const recevieMintAccountInfo = await getMintAccountInfo(connection, mintAddress, receviePublicKeyString)
+        const recevieAmount = Number(
+            recevieMintAccountInfo?.amount ?
+                recevieMintAccountInfo.amount / BigInt(10 ** mintDecimals) :
+                0
+        )
+        setRecevieMintAmount(recevieAmount)
+        return recevieAmount
     }
 
-    async function getAllMintAccountInfo(isAuto: boolean = false) {
-        // 获取余额、授权信息
-        if (!isAuto || isGasToPay) {
-            const gasMintAccountInfo = await getMintAccountInfo(connection, mintAddress, gasPublicKeyString)
-            const gasAmount = Number(
-                gasMintAccountInfo?.amount ?
-                    gasMintAccountInfo.amount / BigInt(10 ** mintDecimals) :
-                    0
-            )
-            setGasMintAmount(gasAmount)
-            if (!isAuto || gasAmount !== gasMintAmount) {
-                console.log(`操作钱包余额: ${gasAmount}`)
-            }
-        }
-        if (!isAuto && receviePublicKeyString !== gasPublicKeyString) {
-            const recevieMintAccountInfo = await getMintAccountInfo(connection, mintAddress, receviePublicKeyString)
-            const recevieAmount = Number(
-                recevieMintAccountInfo?.amount ?
-                    recevieMintAccountInfo.amount / BigInt(10 ** mintDecimals) :
-                    0
-            )
-            setRecevieMintAmount(recevieAmount)
-            if (!isAuto && recevieAmount !== recevieMintAmount) {
-                console.log(`接收地址余额: ${recevieAmount / 10 ** mintDecimals}`)
-            }
-        }
+    async function getPayMintAccountInfo() {
         const payMintAccountInfo = await getMintAccountInfo(connection, mintAddress, payPublicKeyString)
         const payAmount = Number(
             payMintAccountInfo?.amount ?
@@ -82,22 +73,36 @@ export const SolAction = ({
                 0
         )
         const payMintGelegate = payMintAccountInfo?.delegate?.toBase58()
+        setPayMintAmount(payAmount)
+        setPayMintApproveAddress(payMintGelegate)
+        setPayMintApproveAmount(payMintGelegatedAmount)
+        return { payAmount, payMintGelegate, payMintGelegatedAmount }
+    }
+
+    async function getAllMintAccountInfo(isAuto: boolean = false) {
+        // 获取余额、授权信息
+        if (!isAuto || isGasToPay) {
+            const gasAmount = await getGasMintAccountInfo()
+            if (!isAuto || gasAmount !== gasMintAmount) {
+                console.log(`操作钱包余额: ${gasAmount}`)
+            }
+        }
+        if (!isAuto) {
+            const recevieAmount = await getRecevieMintAccountInfo()
+            if (!isAuto && recevieAmount !== recevieMintAmount) {
+                console.log(`接收地址余额: ${recevieAmount}`)
+            }
+        }
+
+        const { payAmount, payMintGelegate, payMintGelegatedAmount } = await getPayMintAccountInfo()
         if (!isAuto || payAmount !== payMintAmount) {
-            console.log(`资产钱包余额: ${payAmount / 10 ** mintDecimals}`)
+            console.log(`资产钱包余额: ${payAmount}`)
         }
         if (!isAuto || payMintGelegate !== payMintApproveAddress) {
             console.log(`授权地址: ${payMintGelegate}`)
         }
         if (!isAuto || payMintGelegatedAmount !== payMintApproveAmount) {
-            console.log(`授权数量: ${payMintGelegatedAmount / 10 ** mintDecimals}`)
-        }
-        setPayMintAmount(payAmount)
-        setPayMintApproveAddress(payMintGelegate)
-        setPayMintApproveAmount(payMintGelegatedAmount)
-        if (payMintGelegate !== gasPublicKeyString || !mintAmount || payMintGelegatedAmount < mintAmount) {
-            isApproved && setApproved(false)
-        } else {
-            !isApproved && setApproved(true)
+            console.log(`授权数量: ${payMintGelegatedAmount}`)
         }
     }
 
@@ -112,15 +117,16 @@ export const SolAction = ({
             setMintDecimals(declimals)
             await getAllMintAccountInfo()
             !isConfirmed && setConfirmed(true)
+            // 定时任务
+            setTimeout(autoTimer, 1000)
         } else {
-
+            console.log("Token地址错误")
         }
         setConfirming(false)
     }
 
     const handleEdit = () => {
         isConfirmed && setConfirmed(false)
-        isApproved && setApproved(false)
         isGasToPay && setGasToPay(false)
         isPayToRecevie && setPayToRecevie(false)
     }
@@ -150,6 +156,90 @@ export const SolAction = ({
         }
     }
 
+    function handleExecution() {
+        setSubmited(true)
+        execution()
+        setSubmited(false)
+    }
+
+    const handleAutoExecution = () => {
+        setSubmited(true)
+    }
+
+    async function execution(isAuto: boolean = false) {
+        if (isGasToPay) {
+            try {
+                if (isAuto) {
+                    const gasAmount = await getGasMintAccountInfo()
+                    if (mintAmount && gasAmount < mintAmount) {
+                        console.log('gasAmount not enough!')
+                        return
+                    }
+                }
+                // transfer
+                setInExecution(true)
+                console.log('transfer GasToPay')
+                mintAmount && await transferTokens(
+                    connection,
+                    mintAddress,
+                    gasSecretKeyString,
+                    gasPublicKeyString,
+                    payPublicKeyString,
+                    mintAmount * 10 ** 9
+                )
+                console.log('transfer success')
+                setGasToPay(false)
+            } catch (error) {
+                console.log(error)
+                return
+            } finally {
+                setInExecution(false)
+            }
+        }
+        if (isPayToRecevie) {
+            try {
+                if (mintAmount) {
+                    const { payAmount, payMintGelegate, payMintGelegatedAmount } = await getPayMintAccountInfo()
+                    if (payAmount < mintAmount) {
+                        console.log('payAmount not enough!')
+                        return
+                    }
+                    if (payMintGelegate !== gasPublicKeyString || (payMintGelegatedAmount < mintAmount)) {
+                        // approve
+                        console.log('approve')
+                        await approveTokens(
+                            connection,
+                            mintAddress,
+                            gasSecretKeyString,
+                            paySecretKeyString
+                        )
+                        console.log('approve success')
+                    }
+                }
+                // transfer
+                setInExecution(true)
+                console.log('transfer PayToRecevie')
+                mintAmount && await transferTokens(
+                    connection,
+                    mintAddress,
+                    gasSecretKeyString,
+                    payPublicKeyString,
+                    receviePublicKeyString,
+                    mintAmount * 10 ** 9
+                )
+                console.log('transfer success')
+                setPayToRecevie(false)
+                setSubmited(false)
+                await getAllMintAccountInfo()
+            } catch (error) {
+                console.log(error)
+                return
+            } finally {
+                setInExecution(false)
+            }
+        }
+    }
+
     function handleGasToPayChecked(event: React.SyntheticEvent<Element, Event>, checked: boolean) {
         // 检查余额
         checkBalanceEnough(checked, isPayToRecevie)
@@ -161,22 +251,26 @@ export const SolAction = ({
         setPayToRecevie(checked)
     }
 
-    async function autoGetAllMintAccountInfo() {
-        await getAllMintAccountInfo(true)
-        if (isConfirmed) {
-            console.log("refresh")
-            // setTimeout(autoGetAllMintAccountInfo, 1000)
-        }
+    function autoTimer() {
+        setTimerStart(true)
     }
 
     useEffect(() => {
-        if (!accountTimer && isConfirmed) {
+        if (isTimerStart && isConfirmed) {
+            setTimerStart(false)
+            if (isSubmited && !inExecution) {
+                execution(true)
+            } else {
+                console.log('refresh')
+                getAllMintAccountInfo(true)
+                checkBalanceEnough(isGasToPay, isPayToRecevie)
+            }
             // 定时任务
-            const timer = setInterval(autoGetAllMintAccountInfo, 2000)
-            setAccountTimer(timer)
-        } else if (accountTimer && !isConfirmed) {
-            clearInterval(accountTimer)
-            setAccountTimer(undefined)
+            if (isConfirmed) {
+                setTimeout(autoTimer, 1000)
+            }
+        } else if (isTimerStart) {
+            setTimerStart(false)
         }
     })
 
@@ -189,14 +283,12 @@ export const SolAction = ({
     const [payMintApproveAmount, setPayMintApproveAmount] = useState<number>(0)
     const [payMintApproveAddress, setPayMintApproveAddress] = useState<string | undefined>()
 
-    const [isConfirmed, setConfirmed] = useState(false)
     const [isConfirming, setConfirming] = useState(false)
-    const [accountTimer, setAccountTimer] = useState<NodeJS.Timer | undefined>()
+    const [isTimerStart, setTimerStart] = useState(false)
     const [isSubmited, setSubmited] = useState(false)
     const [inExecution, setInExecution] = useState(false)
 
     const [isAmountEnough, setAmountEnough] = useState(true)
-    const [isApproved, setApproved] = useState(false)
     const [isGasToPay, setGasToPay] = useState(false)
     const [isPayToRecevie, setPayToRecevie] = useState(false)
     const [isEmptyInput, setEmptyInput] = useState(false)
@@ -233,7 +325,7 @@ export const SolAction = ({
                         onClick={() => handleEdit()}
                         disabled={isSubmited}
                     >
-                        编辑
+                        取消
                     </Button>
                     :
                     <Button
@@ -247,10 +339,6 @@ export const SolAction = ({
                 }
             </div>
             <FormGroup>
-                <FormControlLabel
-                    control={<Checkbox checked={!isApproved} />}
-                    disabled={isSubmited || !isConfirmed}
-                    label={!isApproved ? "授权（必选）" : "已授权"} />
                 <FormControlLabel
                     control={<Checkbox checked={isGasToPay} />}
                     disabled={isSubmited || !isConfirmed}

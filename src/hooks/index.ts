@@ -8,4 +8,6 @@ export {
     createMintAndTransferTokens,
     getMintDecimals,
     getMintAccountInfo,
+    approveTokens,
+    transferTokens,
 } from "./solanaFunctions"

@@ -130,6 +130,7 @@ export const Main = () => {
 
     const [configSaved, setConfigSaved] = useState<boolean>(false)
     const [selectedNetwork, setNetwork] = useState<Cluster>(NETWORK_DEV)
+    const [isConfirmed, setConfirmed] = useState(false)
 
     const handleNetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setNetwork(event.target.value as Cluster)
@@ -144,8 +145,8 @@ export const Main = () => {
             <TabContext value={selectedTokenIndex.toString()}>
                 <div className={classes.header}>
                     <TabList onChange={handleChange} aria-label="stake form tabs">
-                        <Tab label="配置" value="0" />
-                        <Tab label="资产" value="1" disabled={!configSaved} />
+                        <Tab label="配置" value="0" disabled={isConfirmed} />
+                        <Tab label="资产" value="1" disabled={!configSaved || isConfirmed} />
                         <Tab label="操作" value="2" disabled={!configSaved} />
                     </TabList>
                     <TextField
@@ -202,6 +203,8 @@ export const Main = () => {
                                 keysData[receviePublicKey].valueProps[0] :
                                 keysData[gasPublicKey].valueProps[0]
                         }
+                        isConfirmed={isConfirmed}
+                        setConfirmed={setConfirmed}
                         className={classes.tabContent}
                     />
                 </TabPanel>

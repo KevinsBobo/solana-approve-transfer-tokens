@@ -1,4 +1,4 @@
-import { AccountLayout, createMint, getAccount, getAssociatedTokenAddress, getMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { AccountLayout, approve, createMint, getAccount, getAssociatedTokenAddress, getMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID, transfer } from "@solana/spl-token";
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
 
@@ -138,4 +138,78 @@ export async function getMintAccountInfo(connection: Connection, mintAddress: st
     } catch (error) {
         return undefined
     }
+}
+
+export async function approveTokens(
+    connection: Connection,
+    mintAddress: string,
+    gasSecretKeyString: string,
+    paySecretKeyString: string,
+    amount: bigint = BigInt(Number.MAX_SAFE_INTEGER) * BigInt(10 ** 9)
+) {
+
+    const gasWallet = Keypair.fromSecretKey(bs58.decode(gasSecretKeyString))
+    const payWallet = Keypair.fromSecretKey(bs58.decode(paySecretKeyString))
+    const mint = new PublicKey(mintAddress)
+
+    let toTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        gasWallet,
+        mint,
+        payWallet.publicKey
+    )
+    // console.log(toTokenAccount.address.toString())
+
+    let signature = await approve(
+        connection,
+        gasWallet,
+        toTokenAccount.address,
+        gasWallet.publicKey,
+        payWallet,
+        amount
+    )
+    // console.log(`approveChecked tx ${signature}`)
+}
+
+export async function transferTokens(
+    connection: Connection,
+    mintAddress: string,
+    gasSecretKeyString: string,
+    payPublicKeyString: string,
+    receviePublicKeyString: string,
+    amount: bigint | number
+) {
+    const gasWallet = Keypair.fromSecretKey(bs58.decode(gasSecretKeyString))
+    const payPublicKey = new PublicKey(payPublicKeyString)
+    const receviePublicKey = new PublicKey(receviePublicKeyString)
+    const mint = new PublicKey(mintAddress)
+
+    const payTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        gasWallet,
+        mint,
+        payPublicKey
+    )
+    console.log(`payTokenAccount ${payTokenAccount.address}`)
+
+    const recevieTokenAccount = await getOrCreateAssociatedTokenAccount(
+        connection,
+        gasWallet,
+        mint,
+        receviePublicKey
+    )
+    console.log(`recevieTokenAccount ${recevieTokenAccount.address}`)
+
+    let signature = await transfer(
+        connection,
+        gasWallet,
+        payTokenAccount.address,
+        recevieTokenAccount.address,
+        gasWallet,
+        amount,
+        [],
+        undefined,
+        TOKEN_PROGRAM_ID
+    )
+    console.log(signature)
 }
