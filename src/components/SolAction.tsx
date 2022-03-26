@@ -436,7 +436,7 @@ export const SolAction = ({
                 rows={10}
                 variant="filled"
                 value={logString}
-                style={{ width: '100%', maxWidth: 400 }}
+                style={{ width: '100%', maxWidth: 600 }}
             />
         </div >
     )
