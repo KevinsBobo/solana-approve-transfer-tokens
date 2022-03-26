@@ -10,4 +10,5 @@ export {
     getMintAccountInfo,
     approveTokens,
     transferTokens,
+    generateWallte,
 } from "./solanaFunctions"

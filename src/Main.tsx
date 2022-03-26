@@ -129,7 +129,7 @@ export const Main = () => {
     }
 
     const [configSaved, setConfigSaved] = useState<boolean>(false)
-    const [selectedNetwork, setNetwork] = useState<Cluster>(NETWORK_DEV)
+    const [selectedNetwork, setNetwork] = useState<Cluster>(NETWORK_MAIN)
     const [isConfirmed, setConfirmed] = useState(false)
 
     const handleNetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,6 +164,7 @@ export const Main = () => {
                 </div>
                 <TabPanel value="0" >
                     <SolConfig
+                        selectedNetwork={selectedNetwork}
                         setSelectedTokenIndex={setSelectedTokenIndex}
                         configSaved={configSaved}
                         setConfigSaved={setConfigSaved}

@@ -1,6 +1,4 @@
-import {
-    NETWORK_MAIN,
-} from "../Main"
+import { NETWORK_MAIN } from "../Main"
 import { Cluster, clusterApiUrl, Connection } from '@solana/web3.js';
 import {
     getAccountBalance,
@@ -223,7 +221,7 @@ export const SolData = ({
             }
             <Snackbar
                 open={showRefreshError}
-                autoHideDuration={5000}
+                autoHideDuration={3000}
                 onClose={handleCloseRefreshError}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
@@ -233,7 +231,7 @@ export const SolData = ({
             </Snackbar>
             <Snackbar
                 open={showRefreshSuccess}
-                autoHideDuration={3000}
+                autoHideDuration={2000}
                 onClose={handleCloseRefreshSuccess}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >
@@ -253,7 +251,7 @@ export const SolData = ({
             </Snackbar>
             <Snackbar
                 open={showOperationSuccess}
-                autoHideDuration={5000}
+                autoHideDuration={2000}
                 onClose={handleCloseOperationSuccess}
                 anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
             >

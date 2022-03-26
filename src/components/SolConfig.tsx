@@ -1,6 +1,7 @@
 import { Alert, Button, Snackbar, TextField } from "@mui/material"
+import { Cluster } from "@solana/web3.js"
 import React, { useState } from "react"
-import { getPublicKeyFromPublicKeyString, getPublicKeyFromSecretKeyString } from "../hooks"
+import { getPublicKeyFromPublicKeyString, getPublicKeyFromSecretKeyString, generateWallte } from "../hooks"
 import {
     KeyInputProps,
     gasSecretKey,
@@ -8,9 +9,11 @@ import {
     paySecretKey,
     payPublicKey,
     receviePublicKey,
+    NETWORK_MAIN
 } from "../Main"
 
 export interface SolConfigProps {
+    selectedNetwork: Cluster,
     configSaved: boolean,
     setConfigSaved: React.Dispatch<React.SetStateAction<boolean>>,
     setSelectedTokenIndex: React.Dispatch<React.SetStateAction<number>>,
@@ -20,6 +23,7 @@ export interface SolConfigProps {
 
 
 export const SolConfig = ({
+    selectedNetwork,
     configSaved,
     setConfigSaved,
     setSelectedTokenIndex,
@@ -129,6 +133,19 @@ export const SolConfig = ({
         showRecevieKeyError && setShowRecevieKeyError(false)
     }
 
+    const handleGenerate = () => {
+        const { secretKeyString: gasSecretKeyString, publicKeyString: gasPublicKeyString } = generateWallte()
+        keysData['gasSecretKey'].valueProps[1](gasSecretKeyString)
+        keysData['gasPublicKey'].valueProps[1](gasPublicKeyString)
+
+        const { secretKeyString: paySecretKeyString, publicKeyString: payPublicKeyString } = generateWallte()
+        keysData['paySecretKey'].valueProps[1](paySecretKeyString)
+        keysData['payPublicKey'].valueProps[1](payPublicKeyString)
+
+        const { secretKeyString: recevieSecretKeyString, publicKeyString: receviePublicKeyString } = generateWallte()
+        keysData['receviePublicKey'].valueProps[1](receviePublicKeyString)
+    }
+
     return (
         <div {...rest}>
             {Object.keys(keysData).map(key => {
@@ -145,28 +162,43 @@ export const SolConfig = ({
                         onChange={handleInputChange}
                         required={keysData[key].required}
                         disabled={configSaved}
-                        type={keysData[key].type}
+                        type={selectedNetwork !== NETWORK_MAIN ? "text" : keysData[key].type}
                         style={{ width: '100%', maxWidth: 600 }}
                     />
                 )
             })}
-            {configSaved ?
-                <Button
-                    color="primary"
-                    variant="contained"
-                    onClick={() => handleEdit()}
-                >
-                    编辑
-                </Button>
-                :
-                <Button
-                    color="primary"
-                    variant="contained"
-                    onClick={() => saveInput()}
-                >
-                    保存
-                </Button>
-            }
+            <div style={{ display: "flex" }}>
+                {selectedNetwork !== NETWORK_MAIN ?
+                    <Button
+                        color="primary"
+                        variant="contained"
+                        onClick={() => handleGenerate()}
+                        style={{ marginRight: 20 }}
+                        disabled={configSaved}
+                    >
+                        生成测试钱包
+                    </Button>
+                    :
+                    <></>
+                }
+                {configSaved ?
+                    <Button
+                        color="primary"
+                        variant="contained"
+                        onClick={() => handleEdit()}
+                    >
+                        编辑
+                    </Button>
+                    :
+                    <Button
+                        color="primary"
+                        variant="contained"
+                        onClick={() => saveInput()}
+                    >
+                        保存
+                    </Button>
+                }
+            </div>
             <Snackbar
                 open={showEmptyInput}
                 autoHideDuration={2000}

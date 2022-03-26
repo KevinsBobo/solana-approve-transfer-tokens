@@ -63,12 +63,12 @@ export async function getAccountBalance(connection: Connection, publicKeyString:
         const accountInfo = AccountLayout.decode(e.account.data)
         // console.log(`${new PublicKey(accountInfo.mint)}   ${accountInfo.amount}`)
         const mintAddress = accountInfo.mint.toBase58()
-        const amount = accountInfo.amount / BigInt(10 ** 9)
+        const amount = Number(accountInfo.amount) / 10 ** 9
         // console.log(accountInfo.amount)
         // console.log(amount)
         // console.log(Number(amount))
         if (amount > 0) {
-            accountBlance.push({ id: i + 1, address: mintAddress, balance: Number(amount) })
+            accountBlance.push({ id: i + 1, address: mintAddress, balance: amount })
         }
     })
     return accountBlance
@@ -160,7 +160,7 @@ export async function approveTokens(
     )
     // console.log(toTokenAccount.address.toString())
 
-    let signature = await approve(
+    const signature = await approve(
         connection,
         gasWallet,
         toTokenAccount.address,
@@ -169,6 +169,7 @@ export async function approveTokens(
         amount
     )
     // console.log(`approveChecked tx ${signature}`)
+    return signature
 }
 
 export async function transferTokens(
@@ -190,7 +191,7 @@ export async function transferTokens(
         mint,
         payPublicKey
     )
-    console.log(`payTokenAccount ${payTokenAccount.address}`)
+    // console.log(`payTokenAccount ${payTokenAccount.address}`)
 
     const recevieTokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
@@ -198,9 +199,9 @@ export async function transferTokens(
         mint,
         receviePublicKey
     )
-    console.log(`recevieTokenAccount ${recevieTokenAccount.address}`)
+    // console.log(`recevieTokenAccount ${recevieTokenAccount.address}`)
 
-    let signature = await transfer(
+    const signature = await transfer(
         connection,
         gasWallet,
         payTokenAccount.address,
@@ -211,5 +212,11 @@ export async function transferTokens(
         undefined,
         TOKEN_PROGRAM_ID
     )
-    console.log(signature)
+    // console.log(signature)
+    return signature
+}
+
+export function generateWallte() {
+    const wallet = Keypair.generate()
+    return { secretKeyString: bs58.encode(wallet.secretKey).toString(), publicKeyString: wallet.publicKey.toBase58() }
 }
