@@ -196,15 +196,20 @@ export const SolData = ({
                     rowsPerPageOptions={[5]}
                 />
             </div>
-            <div style={{ height: 400, width: '100%', maxWidth: 600, marginBottom: 40 }}>
-                <h4>资产钱包 {payPublicKeyString}</h4>
-                <DataGrid
-                    rows={payBalanceRows}
-                    columns={columns}
-                    pageSize={5}
-                    rowsPerPageOptions={[5]}
-                />
-            </div>
+            {
+                gasPublicKeyString !== payPublicKeyString ?
+                    <div style={{ height: 400, width: '100%', maxWidth: 600, marginBottom: 40 }}>
+                        <h4>资产钱包 {payPublicKeyString}</h4>
+                        <DataGrid
+                            rows={payBalanceRows}
+                            columns={columns}
+                            pageSize={5}
+                            rowsPerPageOptions={[5]}
+                        />
+                    </div>
+                    :
+                    <></>
+            }
             {
                 receviePublicKeyString !== gasPublicKeyString ?
                     <div style={{ height: 400, width: '100%', maxWidth: 600, marginBottom: 40 }}>
