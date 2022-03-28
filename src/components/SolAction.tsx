@@ -229,7 +229,7 @@ export const SolAction = ({
                         }
                         return
                     }
-                    if (payMintGelegate !== gasPublicKeyString || (payMintGelegatedAmount < mintAmount)) {
+                    if (gasPublicKeyString !== payPublicKeyString && (payMintGelegate !== gasPublicKeyString || (payMintGelegatedAmount < mintAmount))) {
                         // approve
                         // console.log('approve')
                         logArray.push('执行授权操作')
@@ -382,7 +382,7 @@ export const SolAction = ({
                 }
             </div>
             <FormGroup>
-                {gasPublicKeyString !== receviePublicKeyString ?
+                {(gasPublicKeyString !== receviePublicKeyString && gasPublicKeyString !== payPublicKeyString) ?
                     <FormControlLabel
                         control={<Checkbox checked={isGasToPay} />}
                         disabled={isSubmited || isAutoSubmited || !isConfirmed}
