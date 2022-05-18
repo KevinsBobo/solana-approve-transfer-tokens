@@ -59,18 +59,31 @@ export async function getAccountBalance(connection: Connection, publicKeyString:
     )
 
     // const tokenAccounts = await getTokenAccounts(connection, publicKeyString)
-    tokenAccounts.value.forEach((e, i) => {
+    for (const i in tokenAccounts.value) {
+        const e = tokenAccounts.value[i]
+        // tokenAccounts.value.forEach(async (e, i) => {
         const accountInfo = AccountLayout.decode(e.account.data)
         // console.log(`${new PublicKey(accountInfo.mint)}   ${accountInfo.amount}`)
         const mintAddress = accountInfo.mint.toBase58()
-        const amount = Number(accountInfo.amount) / 10 ** 9
-        // console.log(accountInfo.amount)
-        // console.log(amount)
-        // console.log(Number(amount))
-        if (amount > 0) {
-            accountBlance.push({ id: i + 1, address: mintAddress, balance: amount })
+        const declimals = await getMintDecimals(connection, mintAddress)
+        // const amount0 = Number(accountInfo.amount) / 10 ** 9
+        // if (amount0 > 0) {
+        //     accountBlance.push({ id: i + 1, address: mintAddress, balance: amount0 })
+        // }
+        if (declimals >= 0) {
+            const amount = Number(accountInfo.amount) / 10 ** declimals
+            // console.log(declimals)
+            // console.log(accountInfo.amount)
+            // console.log(amount)
+            // console.log(Number(amount))
+            if (amount > 0) {
+                accountBlance.push({ id: Number(i) + 1, address: mintAddress, balance: amount })
+            }
+        } else {
+            // "Token地址错误"
+            accountBlance.push({ id: Number(i) + 1, address: mintAddress, balance: -1 })
         }
-    })
+    }
     return accountBlance
 }
 
@@ -93,7 +106,7 @@ export async function createMintAndTransferTokens(connection: Connection, secret
         fromWallet,
         mintAuthority.publicKey,
         freezeAuthority.publicKey,
-        9
+        6
     )
 
     // Get the token account of the fromWallet address, and if it does not exist, create it
@@ -111,7 +124,7 @@ export async function createMintAndTransferTokens(connection: Connection, secret
         mint,
         fromTokenAccount.address,
         mintAuthority,
-        10 ** 18,
+        10 ** 12,
         []
     )
     // console.log('mint tx:', signature)

@@ -34,6 +34,7 @@ export const SolAction = ({
     setConfirmed,
     ...rest
 }: SolActionProps) => {
+    let decimals = -1;
 
     const connection = new Connection(clusterApiUrl(selectedNetwork), 'confirmed')
 
@@ -44,7 +45,7 @@ export const SolAction = ({
     async function getGasMintAccountInfo() {
         const gasMintAccountInfo = await getMintAccountInfo(connection, mintAddress, gasPublicKeyString)
         const gasAmount = gasMintAccountInfo?.amount ?
-            Number(gasMintAccountInfo.amount) / 10 ** mintDecimals :
+            Number(gasMintAccountInfo.amount) / 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0)) :
             0
         setGasMintAmount(gasAmount)
         return gasAmount
@@ -53,7 +54,7 @@ export const SolAction = ({
     async function getRecevieMintAccountInfo() {
         const recevieMintAccountInfo = await getMintAccountInfo(connection, mintAddress, receviePublicKeyString)
         const recevieAmount = recevieMintAccountInfo?.amount ?
-            Number(recevieMintAccountInfo.amount) / 10 ** mintDecimals :
+            Number(recevieMintAccountInfo.amount) / 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0)) :
             0
         setRecevieMintAmount(recevieAmount)
         return recevieAmount
@@ -62,10 +63,10 @@ export const SolAction = ({
     async function getPayMintAccountInfo() {
         const payMintAccountInfo = await getMintAccountInfo(connection, mintAddress, payPublicKeyString)
         const payAmount = payMintAccountInfo?.amount ?
-            Number(payMintAccountInfo.amount) / 10 ** mintDecimals :
+            Number(payMintAccountInfo.amount) / 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0)) :
             0
         const payMintGelegatedAmount = payMintAccountInfo?.delegatedAmount ?
-            Number(payMintAccountInfo.amount) / 10 ** mintDecimals :
+            Number(payMintAccountInfo.amount) / 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0)) :
             0
         const payMintGelegate = payMintAccountInfo?.delegate?.toBase58()
         setPayMintAmount(payAmount)
@@ -117,9 +118,9 @@ export const SolAction = ({
             return
         }
         setConfirming(true)
-        const declimals = await getMintDecimals(connection, mintAddress)
-        if (declimals >= 0) {
-            setMintDecimals(declimals)
+        decimals = await getMintDecimals(connection, mintAddress)
+        if (decimals >= 0) {
+            setMintDecimals(decimals)
             await getAllMintAccountInfo()
             !isConfirmed && setConfirmed(true)
             // 定时任务
@@ -199,7 +200,7 @@ export const SolAction = ({
                         gasSecretKeyString,
                         gasPublicKeyString,
                         payPublicKeyString,
-                        mintAmount * 10 ** 9
+                        mintAmount * 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0))
                     )
                     // console.log('transfer success')
                     logArray.push(`交易完成: ${signature}`)
@@ -257,7 +258,7 @@ export const SolAction = ({
                         gasSecretKeyString,
                         payPublicKeyString,
                         receviePublicKeyString,
-                        mintAmount * 10 ** 9
+                        mintAmount * 10 ** (mintDecimals >= 0 ? mintDecimals : (decimals >= 0 ? decimals : 0))
                     )
                     logArray.push(`交易完成: ${signature}`)
                     setLogString(logArray.join('\n'))
@@ -317,7 +318,7 @@ export const SolAction = ({
 
     const [mintAddress, setMintAddress] = useState<string>("")
     const [mintAmount, setMintAmount] = useState<number>()
-    const [mintDecimals, setMintDecimals] = useState<number>(9)
+    const [mintDecimals, setMintDecimals] = useState<number>(-1)
     const [gasMintAmount, setGasMintAmount] = useState<number>(0)
     const [payMintAmount, setPayMintAmount] = useState<number>(0)
     const [recevieMintAmount, setRecevieMintAmount] = useState<number>(0)
